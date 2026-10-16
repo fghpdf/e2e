@@ -194,6 +194,7 @@
             "pages": [
               "tools",
               "executors",
+              "filters",
               "writing-an-engine"
             ]
           },
