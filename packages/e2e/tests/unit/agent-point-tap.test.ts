@@ -6,7 +6,7 @@
 import { assert, describe, expect, it } from 'vitest';
 import type { Observation, SemanticNode } from '../../src/engine/surface.ts';
 import { prepareObservation } from '../../src/agent/observation.ts';
-import { describePointAction, hitTest, imagePointToViewport, nodeLine } from '../../src/agent/point-tap.ts';
+import { centerReaches, describePointAction, hitTest, imagePointToViewport, nodeLine } from '../../src/agent/point-tap.ts';
 
 function node(id: string, extra: Partial<SemanticNode> = {}): SemanticNode {
   return { ref: { id, revision: 'r1' }, ...extra };
@@ -88,6 +88,54 @@ describe('hitTest', () => {
   });
 });
 
+describe('centerReaches', () => {
+  const popover = observationOf(
+    node('root', {
+      role: 'document',
+      rect: rect(0, 0, 1280, 720),
+      children: [
+        node('dismiss', { role: 'button', name: 'Dismiss popover', rect: rect(0, 0, 1280, 720) }),
+        node('dialog', {
+          role: 'dialog',
+          rect: rect(540, 260, 200, 200),
+          children: [node('day', { role: 'button', name: '15', rect: rect(540, 260, 200, 200) })],
+        }),
+        node('card', {
+          role: 'link',
+          name: 'Card',
+          rect: rect(10, 10, 200, 100),
+          children: [node('title', { role: 'heading', name: 'Card', rect: rect(60, 40, 100, 40) })],
+        }),
+        node('product', {
+          role: 'link',
+          name: 'Product',
+          rect: rect(900, 10, 300, 200),
+          children: [node('add', { role: 'button', name: 'Add to cart', rect: rect(1000, 90, 100, 40) })],
+        }),
+      ],
+    }),
+  );
+
+  it('refuses a control whose center another node covers: a dismiss region under a popover', () => {
+    const hit = hitTest(popover, { x: 300, y: 600 });
+    assert(hit.control !== undefined);
+    expect(hit.control.ref.id).toBe('dismiss');
+    expect(centerReaches(popover, hit.control)).toBe(false);
+  });
+
+  it('refuses a control whose center is a control nested in it: a card link around its button', () => {
+    const hit = hitTest(popover, { x: 910, y: 20 });
+    assert(hit.control !== undefined);
+    expect(hit.control.ref.id).toBe('product');
+    expect(centerReaches(popover, hit.control)).toBe(false);
+  });
+
+  it('accepts a control whose center is its own descendant', () => {
+    expect(centerReaches(popover, popover.nodes.get('card')!)).toBe(true);
+    expect(centerReaches(popover, popover.nodes.get('day')!)).toBe(true);
+  });
+});
+
 describe('imagePointToViewport', () => {
   it('divides by the image scale and rounds: a 3x device screenshot maps to logical points', () => {
     const pixels = { width: 1170, height: 2532, scale: 3 };
@@ -113,9 +161,22 @@ describe('describePointAction', () => {
       point: { x: 50, y: 30 },
       control: screen.nodes.get('n2'),
       under: screen.nodes.get('n2'),
+      byId: true,
       observation: screen,
     });
     expect(text).toBe('Tapped #n2 button "Save", the control at (50, 30).');
+  });
+
+  it('names the control a bare point landed inside', () => {
+    const text = describePointAction({
+      verb: 'tapAt',
+      point: { x: 50, y: 30 },
+      control: screen.nodes.get('n2'),
+      under: screen.nodes.get('n2'),
+      byId: false,
+      observation: screen,
+    });
+    expect(text).toBe('Tapped the point (50, 30) inside #n2 button "Save".');
   });
 
   it('says a bare point landed on nothing listed, with what sits under it', () => {
@@ -124,6 +185,7 @@ describe('describePointAction', () => {
       point: { x: 640, y: 120 },
       control: undefined,
       under: screen.nodes.get('n5'),
+      byId: false,
       observation: screen,
     });
     expect(text).toBe('Tapped the point (640, 120); no listed control is there (under it: #n5 paragraph text="Body copy").');

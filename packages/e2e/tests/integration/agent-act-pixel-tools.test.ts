@@ -12,6 +12,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { StepExecutor } from '../../src/agent/executor.ts';
+import { defineEngine, type NodeRef } from '../../src/engine/index.ts';
 import { startFixtureApp, type FixtureApp } from '../helpers/fixture-app.ts';
 import { installFakeLoopModel, loopCalls, type LoopCall } from '../helpers/fake-loop-model.ts';
 import { resultByTitle, runProject, type FixtureProject } from '../helpers/run-project.ts';
@@ -29,6 +30,12 @@ test('taps a listed control by id when the point lands on it', async ({ app, age
   await app.open('/canvas');
   await agent.act('press the reset button under the map');
   await expect(screen.getByRole('status')).toHaveText('reset');
+});
+
+test('taps the bare point inside a full-screen control whose center is covered', async ({ app, agent, screen }) => {
+  await app.open('/popover');
+  await agent.act('dismiss the calendar popover');
+  await expect(screen.getByRole('status')).toHaveText('dismissed');
 });
 
 test('opens a bare canvas with a screenshot already attached', async ({ app, agent, screen }) => {
@@ -114,6 +121,12 @@ function actModel(call: LoopCall) {
     // The Reset button is fixed at left 0, top 260, 100 by 30: CSS (50, 275) is image (30, 165).
     if (calls === 0) return [{ toolName: 'screenshot', input: {} }];
     if (calls === 1) return [{ toolName: 'tap_at', input: { x: 30, y: 165 } }];
+    return conclude('passed');
+  }
+  if (call.prompt.includes('dismiss the calendar popover')) {
+    // CSS (100, 100), outside the popover, is image (60, 60): inside only the dismiss control, whose center the popover covers.
+    if (calls === 0) return [{ toolName: 'screenshot', input: {} }];
+    if (calls === 1) return [{ toolName: 'tap_at', input: { x: 60, y: 60 } }];
     return conclude('passed');
   }
   if (call.prompt.includes('pick the blue pin on the bare map')) {
@@ -261,6 +274,15 @@ describe('agent.act pixel verbs', () => {
     expect(actions[0]!.detail).toBe('tap button "Reset"');
     const [, , third] = turnsOf('press the reset button');
     expect(third!.lastToolResult).toMatch(/Tapped #\S+ button \\"Reset\\", the control at \(50, 275\)/);
+  });
+
+  it('taps the bare point, not the center, of a control something else covers', () => {
+    const title = 'taps the bare point inside a full-screen control whose center is covered';
+    expect(resultByTitle(outcome, title).status).toBe('passed');
+    const actions = stepOf(title).events.filter((event) => event.kind === 'engine');
+    expect(actions.map((event) => event.name)).toEqual(['tapAt']);
+    const [, , third] = turnsOf('dismiss the calendar popover');
+    expect(third!.lastToolResult).toMatch(/Tapped the point \(100, 100\) inside #\S+ button \\"Dismiss popover\\"/);
   });
 
   it('attaches a screenshot to the opening prompt of a screen with nothing to tap by id', () => {
@@ -461,5 +483,74 @@ test('a point tap issued alongside a node tap lands first', async ({ app, agent,
     expect(actions).toEqual(['tapAt', 'tap']);
     expect(step.metrics!.modelCalls).toBe(0);
     expect(step.model).toBeUndefined();
+  });
+});
+
+/**
+ * The popover layout on an engine with node taps and no `performAt`: a point
+ * outside the popover still taps the dismiss control by id, since a bare
+ * point is not an option, even though its center is covered.
+ */
+describe('actions.tapAt on an engine that taps listed nodes only', () => {
+  const performed: string[] = [];
+  let summary: string | undefined;
+  let outcome: RunOutcome;
+  let project: FixtureProject;
+
+  beforeAll(async () => {
+    const rect = (x: number, y: number, width: number, height: number) => ({ x, y, width, height });
+    const engine = defineEngine({
+      name: 'node-taps-only', version: '1', spiVersion: 1, platform: 'fixture',
+      actions: ['tap'],
+      perform: async (ref: NodeRef) => { performed.push(ref.id); },
+      observe: async () => ({
+        root: {
+          ref: { id: 'root', revision: '' },
+          rect: rect(0, 0, 1280, 720),
+          children: [
+            { ref: { id: 'dismiss', revision: '' }, role: 'button', name: 'Dismiss popover', rect: rect(0, 0, 1280, 720) },
+            {
+              ref: { id: 'dialog', revision: '' },
+              role: 'dialog',
+              name: 'Calendar',
+              rect: rect(540, 260, 200, 200),
+              children: [{ ref: { id: 'day', revision: '' }, role: 'button', name: '15', rect: rect(540, 260, 200, 200) }],
+            },
+          ],
+        },
+        viewport: { width: 1280, height: 720 },
+      }),
+    });
+    const executor: StepExecutor = {
+      name: 'outside-tapper',
+      version: '1',
+      async runStep(context) {
+        await context.observe();
+        ({ summary } = await context.actions.tapAt({ x: 100, y: 100 }));
+        return { status: 'passed', summary };
+      },
+    };
+    const run = await runProject(
+      {
+        'tests/outside.e2e.ts': `import { test } from 'e2e';
+test('taps outside the popover', async ({ agent }) => { await agent.act('dismiss the calendar popover'); });
+`,
+      },
+      {
+        appUrl: 'https://fixture.test',
+        config: { tests: 'tests/**/*.e2e.ts', cache: 'off', targets: [{ name: 'fixture', engine }], agents: { default: { executor } } },
+      },
+    );
+    outcome = run.outcome;
+    project = run.project;
+  }, 120_000);
+
+  afterAll(() => project?.cleanup());
+
+  it('taps the covered control by id and says so', () => {
+    const result = resultByTitle(outcome, 'taps outside the popover');
+    expect(result.status, JSON.stringify(result.attempts[0]?.error)).toBe('passed');
+    expect(performed).toEqual(['dismiss']);
+    expect(summary).toMatch(/^Tapped #\S+ button "Dismiss popover", the control at \(100, 100\)\.$/);
   });
 });

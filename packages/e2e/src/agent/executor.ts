@@ -243,10 +243,11 @@ export interface ExecutorActions {
    * (`SemanticNode.rect` space; a point read off `pixels` is divided by its
    * `scale`). The point is routed onto the tree: a listed, enabled control
    * whose box contains it is tapped by its id, exactly like `tap`, with a
-   * replayable descriptor; a point on nothing listed goes to the engine as a
-   * bare point when it has the `pointer` capability, recorded with its
-   * viewport. Fails when the point is on nothing listed and the engine taps
-   * nodes only.
+   * replayable descriptor. A point on nothing listed, or on a control whose
+   * center another node covers (a full-screen dismiss region behind a
+   * popover), goes to the engine as a bare point when it has the `pointer`
+   * capability, recorded with its viewport. Fails when the point is on
+   * nothing listed and the engine taps nodes only.
    */
   tapAt(point: ViewportPoint): Promise<PointTapResult>;
   /**

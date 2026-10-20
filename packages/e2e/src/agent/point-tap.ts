@@ -2,9 +2,11 @@
  * Point taps: how a viewport point an executor names is routed onto the
  * tree, and how the result reads back. A point that a listed, enabled
  * control contains is tapped by that control's id, so policy, stale
- * relocation, and the trace cache see an ordinary tap; a point on nothing
- * listed goes to the engine as a bare point. Coordinates read off a
- * screenshot are scaled into the observation's CSS pixels first.
+ * relocation, and the trace cache see an ordinary tap, as long as the
+ * control's center is still the control; a point on nothing listed, or on a
+ * control whose center something else covers (an overlay, or a control
+ * nested in it), goes to the engine as a bare point. Coordinates read off a screenshot are scaled into the observation's
+ * CSS pixels first.
  */
 
 import type { PointActionName } from '../cache/trace.ts';
@@ -52,9 +54,39 @@ export interface HitTest {
 export function hitTest(observation: AgentObservation, point: ViewportPoint): HitTest {
   if (observation.kind === 'pixels') return { control: undefined, under: undefined };
   return {
-    control: innermostAt(observation, point, (node) => INTERACTIVE_ROLES.has(node.role ?? '') && node.states?.disabled !== true),
+    control: innermostAt(observation, point, isControl),
     under: innermostAt(observation, point),
   };
+}
+
+/** Whether a node counts as a control a point taps by id: an enabled interactive role. */
+function isControl(node: RedactedNode): boolean {
+  return INTERACTIVE_ROLES.has(node.role ?? '') && node.states?.disabled !== true;
+}
+
+/**
+ * Whether tapping the control by id lands where the point would. A node tap
+ * goes to the control's center, so it stands in for the point only when the
+ * innermost node at that center is the control or a descendant that is not
+ * a control of its own. Two layouts fail this. A full-screen control behind
+ * an overlay: an iOS popover's dismiss region contains every point outside
+ * the popover, but its center is under the popover, so tapping it by id taps
+ * the popover instead. And a control nested at the center: a point on a
+ * card link's margin would tap the card's "Add to cart" button. "Innermost"
+ * is the tree's approximation of what is on top, the same one `hitTest`
+ * makes, not paint order: an overlay listed shallower than the control is
+ * not seen.
+ */
+export function centerReaches(observation: AgentObservation, control: RedactedNode): boolean {
+  const rect = control.rect;
+  if (observation.kind === 'pixels' || rect === undefined) return false;
+  const atCenter = innermostAt(observation, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+  for (let cursor = atCenter?.ref.id; cursor !== undefined; cursor = observation.parents.get(cursor)) {
+    if (cursor === control.ref.id) return true;
+    const node = observation.nodes.get(cursor);
+    if (node !== undefined && isControl(node)) return false;
+  }
+  return false;
 }
 
 /**
@@ -119,19 +151,26 @@ export const POINT_VERBS: Readonly<Record<PointActionName, { readonly node: 'tap
   hoverAt: { node: 'hover', did: 'Hovered over' },
 };
 
-/** What one point action did, for the model that named the point. */
+/**
+ * What one point action did, for the model that named the point: the
+ * control it acted on by id, the control it acted inside as a bare point,
+ * or the bare point on nothing listed.
+ */
 export function describePointAction(
   input: PointProse & {
     readonly verb: PointActionName;
     readonly point: ViewportPoint;
     readonly control: RedactedNode | undefined;
     readonly under: RedactedNode | undefined;
+    /** Whether the control was acted on by id rather than at the bare point. */
+    readonly byId: boolean;
   },
 ): string {
   const { did } = POINT_VERBS[input.verb];
   const at = `(${String(input.point.x)}, ${String(input.point.y)})`;
   if (input.control !== undefined) {
-    return `${did} ${describeNode(input, input.control)}, the control at ${at}.`;
+    if (input.byId) return `${did} ${describeNode(input, input.control)}, the control at ${at}.`;
+    return `${did} the point ${at} inside ${describeNode(input, input.control)}.`;
   }
   const under = input.under === undefined ? '' : ` (under it: ${describeNode(input, input.under)})`;
   return `${did} the point ${at}; no listed control is there${under}.`;

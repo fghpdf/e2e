@@ -29,7 +29,7 @@ import type { ObservationFeed, Resolved } from './observation-feed.ts';
 import { resolveScrollTarget } from './scroll-target.ts';
 import type { OperationQueue } from './operation-queue.ts';
 import { instrumentPhase, recordPolicyEvent } from './phases.ts';
-import { describePointAction, describePointHit, hitTest, POINT_VERBS, type PointProse } from './point-tap.ts';
+import { centerReaches, describePointAction, describePointHit, hitTest, POINT_VERBS, type PointProse } from './point-tap.ts';
 import { nodeReading, normalizeReading, readingShape } from './reading.ts';
 import type { AgentObservation, RedactedNode, SemanticAgentObservation } from './observation.ts';
 import { authorizeSecretFill } from './secrets.ts';
@@ -224,9 +224,11 @@ export class ActionDispatcher {
    * against the newest observation, like a targeted action's resolution. A
    * listed, enabled control containing the point is acted on by its id, so
    * policy, stale relocation, and the trace descriptor see an ordinary node
-   * action; a point on nothing listed goes to the engine as a bare point
-   * when it takes one. The point is clamped to the viewport first, so one
-   * placed off the edge lands on the edge rather than failing the engine.
+   * action, unless something else covers the control's center (a popover
+   * over its full-screen dismiss region) and the engine takes a bare point.
+   * A point on nothing listed goes to the engine as a bare point when it
+   * takes one. The point is clamped to the viewport first, so one placed
+   * off the edge lands on the edge rather than failing the engine.
    */
   private pointVerb(verb: PointActionName, point: ViewportPoint): Promise<PointTapResult> {
     requireFinitePoint(point, verb);
@@ -235,9 +237,20 @@ export class ActionDispatcher {
       const observation = this.feed.requireLatest();
       const clamped = clampToViewport(point, observation.viewport);
       const hit = hitTest(observation, clamped);
-      // An engine without the node verb gets the bare point even under a listed control.
-      const control = this.verbs.has(nodeVerb) ? hit.control : undefined;
-      const summary = describePointAction({ verb, point: clamped, control, under: hit.under, ...this.prose(observation) });
+      // An engine without the node verb gets the bare point even under a listed control,
+      // and one without the point verb gets the control even when its center is covered.
+      const control =
+        hit.control !== undefined && this.verbs.has(nodeVerb) && (!this.verbs.has(verb) || centerReaches(observation, hit.control))
+          ? hit.control
+          : undefined;
+      const summary = describePointAction({
+        verb,
+        point: clamped,
+        control: hit.control,
+        under: hit.under,
+        byId: control !== undefined,
+        ...this.prose(observation),
+      });
       if (control !== undefined) {
         const target = { id: control.ref.id };
         await this.runActionNow(nodeVerb, () => this.targeted(this.feed.resolve(target), (node) => this.performNode(nodeVerb, node)));
