@@ -387,10 +387,12 @@ An undeclared verb is absent from the toolset.
 - `clear` and `focus` unlock no verb.
 - `tap_at`, `hover_at`, `type_at`, `press_at`, and `select_at` go through
   `perform` when the point lands on a node the tree lists.
-- When the point lands on nothing the tree lists, or for `tap_at` and
-  `hover_at` on a control whose center another node covers, `tap_at` and
-  `hover_at` go through `performAt` (the `tap` and `hover` pointer kinds), and
+- When the point lands on nothing the tree lists, `tap_at` and `hover_at`
+  go through `performAt` (the `tap` and `hover` pointer kinds), and
   `type_at` and `press_at` fall back to `keyboard`.
+- `tap_at` and `hover_at` on a control whose center another node covers go
+  through `performAt` when the engine declares that pointer kind, else
+  through `perform` by id.
 
 #### Test APIs
 
