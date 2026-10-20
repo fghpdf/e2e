@@ -247,8 +247,9 @@ type ReporterSummary = readonly { label: string; text: string }[];
   calls `onRunFinished`.
 
 <Note>
-Hand `signal` to every request and timer. The CLI gives what an abandoned
-reporter still runs two seconds after the run, then exits and cuts it off.
+Hand `signal` to every request and timer. An abandoned reporter gets two
+seconds after the run to finish; then the CLI exits and cuts off what is
+still running.
 </Note>
 
 ##### Summary rows
