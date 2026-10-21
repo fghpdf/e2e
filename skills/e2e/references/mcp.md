@@ -123,8 +123,8 @@ Resources: `e2e://guide` and `e2e://guide/<topic>` hold this skill.
    launch screen. Then `observe` and `locate`.
 5. Leave the session open through step 4's runs, on the screen under test.
    When a failed run leaves you wanting a live look, `observe` there instead
-   of walking the flow again in a new session. Rules says when a run can
-   share the app with the session. `close_session` once the test passes; an
+   of walking the flow again in a new session. Rules says when a run can go
+   beside the session. `close_session` once the test passes; an
    idle session closes on its own after 30 minutes and never outlives 4
    hours. When the client exits, every session closes and the app commands
    stop. To look at another project or config,
@@ -142,22 +142,29 @@ Resources: `e2e://guide` and `e2e://guide/<topic>` hold this skill.
 - Nothing a session does is recorded as a test or into the replay cache. A
   session is for looking and trying; the test is what you write afterwards.
 - On the web, a session can stay open while `e2e run` runs, unless both
-  would start the app on one port. Read the target's `app`:
-  - No `command` (the app runs elsewhere), or a `url` on port `0`: nothing
-    to do. Port `0` gives the session and each run an app of their own.
+  would start the app. Read the target's `app`:
+  - No `command` (the app runs elsewhere): both use that app.
+  - A `url` on port `0`: the session and each run start their own copy of
+    the app. A dev server that allows one copy per directory, such as
+    `next dev` in Next.js 16, fails the run with `APP_UNREACHABLE`; close
+    the session before each run there.
   - A `command` on a fixed port with `reuseExisting: true`: a run uses the
     app the session started, and its data. Whichever started the app stops
-    it, so closing the session during a run stops the app under the run.
+    it: if the session closes during a run (`close_session`, or 30 idle
+    minutes, since a run is not session activity), the run fails with
+    `APP_UNREACHABLE`. With `CI` set, as in many agent sandboxes,
+    `reuseExisting` is ignored: prefix the run with `CI=` to unset it,
+    which also drops the other CI defaults (topic `running`), or close the
+    session before each run.
   - A `command` on a fixed port without it: a run beside the session fails
     with `APP_ALREADY_RUNNING`. Offer the user `reuseExisting: true` (CI
     ignores it); never add it unasked. Until then, close the session before
     each run.
-  - `CI` set, as in many agent sandboxes: `reuseExisting` is ignored. Prefix
-    the run with `CI=` to unset it, which also drops the other CI defaults
-    (topic `running`), or close the session before each run.
-- On mobile, a session and a run on one device fight over it: close the
-  session before each run, or open it on a target with a device of its own
-  (topic `setup`).
+- On mobile, close the session before each run: a session and a run on one
+  device fight over it. It can stay open only on a target whose `device` no
+  run uses, with each run passing `--target` for another; an `app.command`
+  both start (Metro) follows the web rules above. Ask before adding a
+  target to the user's config (topic `setup`).
 - Parallel agents (subagents) share one server: each opens its own session
   and passes its session id to every `tools`, `call`, and `close_session`.
   A call may leave `session` out only while one session is open. Sessions

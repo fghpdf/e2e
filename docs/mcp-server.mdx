@@ -114,12 +114,13 @@ On web, a run next to a session depends on the target's `app`:
 | Target's `app` | A run while a session is open |
 | --- | --- |
 | No `command` | Both use the app you started. |
-| `url` on port [`0`](/web#let-the-runner-pick-the-port) | Each starts its own app on a free port. |
-| `command` with [`reuseExisting: true`](/web#starting-your-app) | The run uses the app the session started. Closing the session stops that app, also during a run. |
-| `command` on a fixed port | Fails with `APP_ALREADY_RUNNING`. Close the session first. |
+| `url` on port [`0`](/web#let-the-runner-pick-the-port) | Each starts its own copy of the app. A dev server that runs one copy per directory, such as `next dev`, fails the run. |
+| `command` with [`reuseExisting: true`](/web#starting-your-app) | The run uses the app the session started. When the session closes, also during a run, that app stops. |
+| `command` on a fixed port, without `reuseExisting` | Fails with `APP_ALREADY_RUNNING`. |
 
-When `CI` is set, e2e ignores `reuseExisting`. Use port `0`, or close the
-session first. On mobile, run on a device no session uses.
+When `CI` is set, e2e ignores `reuseExisting`, and the run fails as on a
+fixed port. Close the session before a run that would fail. On mobile, run
+on a device no session uses.
 
 ## Run several agents
 
