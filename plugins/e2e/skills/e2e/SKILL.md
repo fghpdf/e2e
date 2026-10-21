@@ -140,25 +140,29 @@ screen.
 
 ## Rerunning a test while you fix it
 
-A failing run waits out its failure (by default 30 s for a locator that
-matches nothing, 5 s for an assertion), and every `agent.act` that runs
-live spends model calls. Keep each rerun to the one test and the lines you
-changed:
+A failing run waits out its failure (by default 30 s for an action whose
+locator matches nothing, 5 s for an assertion), and every `agent.act` that
+runs live spends model calls. Keep each rerun to the one test and the lines
+you changed:
 
 - Run by `file:line`, not the whole suite. A line added above the test
   moves its `test(` line; `NO_TESTS` names the new one.
 - Keep the replay cache on. A failed run keeps the recording of every goal
   whose check passed, so the next run replays those goals with no model
-  call and runs live only what is new, changed, or failed. Leave
-  `--no-cache` off: it sends every goal to the model again.
+  call. Only goals that are new, changed, or whose check failed run live,
+  plus `agent.assert`, `agent.waitFor`, and `agent.extract`, which never
+  replay. Leave `--no-cache` off: it sends every goal to the model again.
+  Recording needs the `read-write` cache, the local default; with `CI` set
+  and no cache mode in the config, the cache only replays.
 - Don't rename the test, its `describe`, or its file, and don't reword a
-  goal or change its params once it passes. A recording's key holds the
-  file, the title path, the instruction, and the params, so each of these
-  records that goal again live. Other edits keep the recordings, as long as
-  each goal still starts on the screen it was recorded on.
+  goal, change its params, or change the agent's `context` or the test's
+  `agentContext` once a goal passes. Each is part of a recording's key, so
+  every goal it touches records again live. Fixing a locator or an
+  expectation keeps the recordings.
 - Add `--retries 0` when the config sets `retries` (the default is 0
-  locally, 1 in CI). A retry never replays: it runs every goal live and
-  waits out the failure again.
+  locally, 1 in CI); a `retries` option on the test or its `describe` wins
+  over the flag. Outside `--strict-cache`, a retry never replays: it runs
+  every goal live and waits out the failure again.
 - Once the test passes, run it one time with `--no-cache` to prove the live
   agent still reaches every goal without its recordings.
 

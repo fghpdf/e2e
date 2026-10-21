@@ -310,8 +310,9 @@ matches. Misses and hand-offs use the model; `agent.assert`,
   over mid-step. The web engine does not observe Next.js App Router's route
   announcer, so its title echo never counts. An entry's key holds the test
   file and title path, the target, the instruction and params, the agent,
-  and its `agentContext`, so renaming the test or its file, or rewording a
-  goal, records that goal again. `step.cache.reason` says why: `no-entry`,
+  its `context`, and the test's `agentContext`, so renaming the test or its
+  file records every goal in it again, and rewording a goal records that
+  goal again. `step.cache.reason` says why: `no-entry`,
   `wrong-context`, `target-not-found`, `target-ambiguous`, `end-mismatch`,
   and so on.
 - A step recording no actions, or changing nothing on screen or in the
@@ -329,7 +330,8 @@ matches. Misses and hand-offs use the model; `agent.assert`,
 - While you fix a test, keep the cache on: each rerun replays the goals
   whose check passed and calls the model only for the rest (SKILL.md,
   "Rerunning a test while you fix it"). `--no-cache` is for ruling out a
-  stale replay, and for one live run once the test passes.
+  stale replay (topic debugging, "Tools"), and for one live run once the
+  test passes.
 - With committed recordings, `--strict-cache` in CI fails a recording that
   no longer replays with `REPLAY_STALE` instead of quietly spending model
   calls every run; re-record with a `read-write` run without the flag and

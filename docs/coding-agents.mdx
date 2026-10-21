@@ -159,9 +159,11 @@ bunx e2e run tests/checkout.e2e.ts:3
 
 The agent fixes CLI, config, and collection errors before it runs again.
 It keeps the replay cache on and doesn't edit its recordings. Goals whose
-check passed replay without model calls, so each rerun pays only for what
-changed. When the test passes, the agent runs it one time with
-`--no-cache` to check that the live agent reaches every goal. See
+check passed replay without model calls. A rerun calls the model only for
+goals that are new, changed, or whose check failed, and for
+`agent.assert`, `waitFor`, and `extract`. When the test passes, the agent
+runs it one time with `--no-cache` to check that the live agent reaches
+every goal. See
 [Rerun a test while you fix it](/cache#rerun-a-test-while-you-fix-it).
 
 ## How an agent reads a failure
