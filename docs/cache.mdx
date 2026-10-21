@@ -125,20 +125,21 @@ identity. On devices, replay uses the
 
 ## Rerun a test while you fix it
 
-Keep the cache on in `read-write` mode, the local default, while you fix a
-failing test. A failed run keeps the recordings a check
+While you fix a failing test, keep the cache on in `read-write` mode, the
+local default, and outside [strict mode](#fail-on-a-stale-recording),
+which never writes. A failed run keeps the recordings a check
 [confirmed](#when-a-recording-is-written) before the failure. The next run
-replays those goals and calls the model only for goals that are new,
-changed, or whose check failed.
+replays those goals without model calls, as long as each replay still
+matches the screen.
 
 1. Run only that test, by the line its `test(` opens on:
    `npx e2e run tests/cart.e2e.ts:3`.
 2. Don't rename the test or reword a goal that passes. Each
    [causes a miss](#what-must-match): a rename for every goal in the test,
    a reworded goal for itself.
-3. When the config sets `retries`, add `--retries 0`. Outside
-   [strict mode](#fail-on-a-stale-recording), a retry doesn't replay, so it
-   runs every goal live.
+3. When the config sets `retries`, add `--retries 0`. A `retries` option on
+   the test or its `describe` wins over the flag. A retry doesn't replay,
+   so it runs every goal live.
 4. When the test passes, run it one time with `--no-cache`. Every goal
    runs live, which shows the agent still reaches it without a recording.
 

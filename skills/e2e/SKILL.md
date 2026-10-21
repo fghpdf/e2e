@@ -145,15 +145,16 @@ locator matches nothing, 5 s for an assertion), and every `agent.act` that
 runs live spends model calls. Keep each rerun to the one test and the lines
 you changed:
 
-- Run by `file:line`, not the whole suite. A line added above the test
-  moves its `test(` line; `NO_TESTS` names the new one.
+- Run by `file:line`, not the whole suite. After an edit above the test,
+  look its `test(` line up again: a stale line runs another test, or fails
+  with `NO_TESTS` listing the lines tests start at.
 - Keep the replay cache on. A failed run keeps the recording of every goal
-  whose check passed, so the next run replays those goals with no model
-  call. Only goals that are new, changed, or whose check failed run live,
-  plus `agent.assert`, `agent.waitFor`, and `agent.extract`, which never
-  replay. Leave `--no-cache` off: it sends every goal to the model again.
-  Recording needs the `read-write` cache, the local default; with `CI` set
-  and no cache mode in the config, the cache only replays.
+  whose check passed, and the next run replays those with no model call.
+  New, changed, and failed goals run live, as do replays the trace page
+  shows as handed off and `agent.assert`, `agent.waitFor`, and
+  `agent.extract`. Leave `--no-cache` off: it sends every goal to the model
+  again. Only a `read-write` cache records: the local default, but not with
+  `CI` set and no cache mode in the config, nor in strict mode.
 - Don't rename the test, its `describe`, or its file, and don't reword a
   goal, change its params, or change the agent's `context` or the test's
   `agentContext` once a goal passes. Each is part of a recording's key, so
@@ -161,8 +162,9 @@ you changed:
   expectation keeps the recordings.
 - Add `--retries 0` when the config sets `retries` (the default is 0
   locally, 1 in CI); a `retries` option on the test or its `describe` wins
-  over the flag. Outside `--strict-cache`, a retry never replays: it runs
-  every goal live and waits out the failure again.
+  over the flag. Outside strict mode (`--strict-cache`, `cache.strict`), a
+  retry never replays: it runs every goal live and waits out the failure
+  again.
 - Once the test passes, run it one time with `--no-cache` to prove the live
   agent still reaches every goal without its recordings.
 
