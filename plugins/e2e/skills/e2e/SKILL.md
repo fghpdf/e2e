@@ -101,10 +101,12 @@ test('a member upgrades to Pro', async ({ app, agent, screen, browser }) => {
    from the app's API (topic `writing-tests`).
    Exact values go through `screen`: a sign-in form in a setup test, a field
    that must receive one specific string, a count that must be one number.
-4. Run one file: `npx e2e run tests/<feature>.e2e.ts`. Agent steps need a
-   model in the config and that provider's authentication (a saved
-   subscription login, an API key); a local endpoint may need none. Tests
-   without agent steps need no model.
+4. Run only the test you are working on:
+   `npx e2e run tests/<feature>.e2e.ts:<line>`, the line its `test(` opens
+   on. Rerun it the same way after each fix ("Rerunning a test while you
+   fix it" below). Agent steps need a model in the config and that
+   provider's authentication (a saved subscription login, an API key); a
+   local endpoint may need none. Tests without agent steps need no model.
 5. When it fails, fix it from what the run recorded (next section).
 
 ## Workflow: fixing a failed test
@@ -135,6 +137,30 @@ screen.
    from there.
 5. Rerun the file (topic `mcp` says when a session must close first).
    Repeat with the next failure.
+
+## Rerunning a test while you fix it
+
+A failing run waits out its failure (by default 30 s for a locator that
+matches nothing, 5 s for an assertion), and every `agent.act` that runs
+live spends model calls. Keep each rerun to the one test and the lines you
+changed:
+
+- Run by `file:line`, not the whole suite. A line added above the test
+  moves its `test(` line; `NO_TESTS` names the new one.
+- Keep the replay cache on. A failed run keeps the recording of every goal
+  whose check passed, so the next run replays those goals with no model
+  call and runs live only what is new, changed, or failed. Leave
+  `--no-cache` off: it sends every goal to the model again.
+- Don't rename the test, its `describe`, or its file, and don't reword a
+  goal or change its params once it passes. A recording's key holds the
+  file, the title path, the instruction, and the params, so each of these
+  records that goal again live. Other edits keep the recordings, as long as
+  each goal still starts on the screen it was recorded on.
+- Add `--retries 0` when the config sets `retries` (the default is 0
+  locally, 1 in CI). A retry never replays: it runs every goal live and
+  waits out the failure again.
+- Once the test passes, run it one time with `--no-cache` to prove the live
+  agent still reaches every goal without its recordings.
 
 ## Rules
 

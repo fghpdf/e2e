@@ -84,7 +84,8 @@ request still open), and any other failure in the same attempt, such as an
 A cache entry belongs to one test, target, instruction, set of params, and
 agent. Each of these changes causes a miss:
 
-- renaming the test or the target,
+- renaming the test, its `describe` group, or the target, or moving the
+  test file,
 - changing the instruction or an ordinary param,
 - running with another configured agent (`agent: ['buyer', 'admin']`
   records one entry each), or changing the agent's `context` or the test's
@@ -121,6 +122,22 @@ For preview URLs that change on each deploy, set
 [`app.identity`](/reference/config#the-app-under-test) to keep one cache
 identity. On devices, replay uses the
 [screen title](/reference/mobile#replay-cache-on-a-device) as the path.
+
+## Rerun a test while you fix it
+
+Keep the cache on while you fix a failing test. A failed run keeps the
+recordings a check [confirmed](#when-a-recording-is-written) before the
+failure. The next run replays those goals and calls the model only for
+goals that are new, changed, or failed.
+
+1. Run only that test, by the line its `test(` opens on:
+   `npx e2e run tests/cart.e2e.ts:3`.
+2. Don't rename the test or reword a goal that passes. Either
+   [causes a miss](#what-must-match), and the goal runs live again.
+3. When the config sets `retries`, add `--retries 0`. A retry never
+   replays, so it runs every goal live.
+4. When the test passes, run it one time with `--no-cache`. Every goal
+   runs live, which shows the agent still reaches it without a recording.
 
 ## How a replay works
 

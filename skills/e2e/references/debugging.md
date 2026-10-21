@@ -137,7 +137,7 @@ jq '.run.results[] | select(.selected and .status != "passed") | .attempts[-1]
 | `--headed` | Watch the failing step |
 | `--workers 1 --retries 0` | Take parallelism and retries out of the picture |
 | `--action-timeout 5000` | While writing a test: a wrong locator fails in 5 s instead of 30 s (`--assertion-timeout` for `expect`). Keep it longer than the slowest screen takes to load |
-| `--no-cache` | Rule out a stale `agent.act` replay |
+| `--no-cache` | Rule out a stale `agent.act` replay when a failure follows steps the trace page shows as replayed. One run, not every rerun: a failed run already drops the recordings it implicates |
 | `--debug` | Each agent step's duration, model calls, cost, transcript |
 | `--ai-trace`, then `npx unbox-ai runs .e2e/ai-trace.json` | What the model saw and called |
 | `--video`, `--video=retain-on-failure` | Watch the failed attempt; `step.startedAt` minus the segment's `startedAt` is the step's offset into it |

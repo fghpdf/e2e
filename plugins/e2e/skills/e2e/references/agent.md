@@ -308,8 +308,10 @@ matches. Misses and hand-offs use the model; `agent.assert`,
   there, every one that went away is gone, at least one of those changed
   during the replay, and no new alert showed; otherwise the agent takes
   over mid-step. The web engine does not observe Next.js App Router's route
-  announcer, so its title echo never counts. Entries are keyed per agent and
-  per `agentContext`. `step.cache.reason` says why: `no-entry`,
+  announcer, so its title echo never counts. An entry's key holds the test
+  file and title path, the target, the instruction and params, the agent,
+  and its `agentContext`, so renaming the test or its file, or rewording a
+  goal, records that goal again. `step.cache.reason` says why: `no-entry`,
   `wrong-context`, `target-not-found`, `target-ambiguous`, `end-mismatch`,
   and so on.
 - A step recording no actions, or changing nothing on screen or in the
@@ -319,10 +321,15 @@ matches. Misses and hand-offs use the model; `agent.assert`,
 - `e2e init` gitignores `.e2e/cache/`; remove that line to commit entries
   and share replays with CI and teammates (CI stays `read-only` unless
   `cache: 'read-write'` is set).
-- A failing run evicts the entries it implicates; `--no-cache` rules the
-  cache out of a failure. A cancelled run and a failure where no model
-  answered (`MODEL_PROVIDER_FAILED`, `MODEL_UNAVAILABLE`) implicate nothing
-  and evict nothing.
+- A failing run keeps the entries a check confirmed before the failure. It
+  evicts a replay that ran into the failure and any recording no check
+  confirmed. A cancelled run and a failure where no model answered
+  (`MODEL_PROVIDER_FAILED`, `MODEL_UNAVAILABLE`) implicate nothing and evict
+  nothing.
+- While you fix a test, keep the cache on: each rerun replays the goals
+  whose check passed and calls the model only for the rest (SKILL.md,
+  "Rerunning a test while you fix it"). `--no-cache` is for ruling out a
+  stale replay, and for one live run once the test passes.
 - With committed recordings, `--strict-cache` in CI fails a recording that
   no longer replays with `REPLAY_STALE` instead of quietly spending model
   calls every run; re-record with a `read-write` run without the flag and
