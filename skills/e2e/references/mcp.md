@@ -123,12 +123,14 @@ Resources: `e2e://guide` and `e2e://guide/<topic>` hold this skill.
    launch screen. Then `observe` and `locate`.
 5. Leave the session open through step 4's runs, on the screen under test.
    When a failed run leaves you wanting a live look, `observe` there instead
-   of walking the flow again in a new session. Rules says when a run can go
-   beside the session. `close_session` once the test passes; an
-   idle session closes on its own after 30 minutes and never outlives 4
-   hours. When the client exits, every session closes and the app commands
-   stop. To look at another project or config,
-   `open_session {config: "path/to/e2e.config.ts"}`; no restart needed.
+   of walking the flow again in a new session; `observe` does not reload, so
+   `navigate` to the path first when the run or a fix may have changed what
+   the page shows. Rules says when a run can go beside the session.
+   `close_session` once the test passes; an idle session closes on its own
+   after 30 minutes and never outlives 4 hours. When the client exits, every
+   session closes and the app commands stop. To look at another project or
+   config, `open_session {config: "path/to/e2e.config.ts"}`; no restart
+   needed.
 
 ## Rules
 
@@ -141,8 +143,8 @@ Resources: `e2e://guide` and `e2e://guide/<topic>` hold this skill.
   the screen it re-observed: re-aim from that screen.
 - Nothing a session does is recorded as a test or into the replay cache. A
   session is for looking and trying; the test is what you write afterwards.
-- On the web, a session can stay open while `e2e run` runs, unless both
-  would start the app. Read the target's `app`:
+- On the web, a session can stay open while `e2e run` runs, unless the two
+  collide over the app. Read the target's `app`:
   - No `command` (the app runs elsewhere): both use that app.
   - A `url` on port `0`: the session and each run start their own copy of
     the app. A dev server that allows one copy per directory, such as
@@ -150,12 +152,14 @@ Resources: `e2e://guide` and `e2e://guide/<topic>` hold this skill.
     the session before each run there.
   - A `command` on a fixed port with `reuseExisting: true`: a run uses the
     app the session started, and its data. Whichever started the app stops
-    it: if the session closes during a run (`close_session`, or 30 idle
-    minutes, since a run is not session activity), the run fails with
-    `APP_UNREACHABLE`. With `CI` set, as in many agent sandboxes,
-    `reuseExisting` is ignored: prefix the run with `CI=` to unset it,
-    which also drops the other CI defaults (topic `running`), or close the
-    session before each run.
+    it: if the session closes during a run (`close_session`, 30 idle minutes
+    or the 4-hour limit, since a run is not session activity), the app stops
+    under the run. Its next navigation fails with `APP_UNREACHABLE`; a step
+    already on the page fails with whatever the dead server breaks. Before a
+    long run, `observe` once to reset the idle clock. With `CI` set, as in
+    many agent sandboxes, `reuseExisting` is ignored: prefix the run with
+    `CI=` to unset it, which also drops the other CI defaults (topic
+    `running`), or close the session before each run.
   - A `command` on a fixed port without it: a run beside the session fails
     with `APP_ALREADY_RUNNING`. Offer the user `reuseExisting: true` (CI
     ignores it); never add it unasked. Until then, close the session before
