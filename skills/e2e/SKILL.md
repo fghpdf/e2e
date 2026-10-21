@@ -142,6 +142,9 @@ screen.
   ask before adding a test framework, and name any existing framework.
 - Live MCP tools need the project's own `e2e mcp` server registered in the
   client (topic `mcp`); writing and running tests use the CLI directly.
+  Keep a session open across runs while you write or fix a web test; topic
+  `mcp` says when a run can go beside it, and what to do on
+  `APP_ALREADY_RUNNING`.
 - Run the CLI as `npx e2e ...` (or `pnpm exec e2e ...`).
 - The config is `export default { ... } satisfies E2EConfig` with
   `import type { E2EConfig } from 'e2e'`. `targets` is required; a UI target
