@@ -107,8 +107,8 @@ Use: screen.getByRole("button", "Sign in")
 A session doesn't run tests and writes no test results or cache
 recordings. The agent runs tests with `e2e run` and, when a run can go
 beside the session, keeps the session open between runs. After a failed
-run, it looks at the screen in the session instead of walking the flow
-again.
+run, it goes to the failing screen in that session instead of opening a
+new one.
 
 On web, a run next to a session depends on the target's `app`:
 

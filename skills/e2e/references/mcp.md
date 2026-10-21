@@ -121,11 +121,12 @@ Resources: `e2e://guide` and `e2e://guide/<topic>` hold this skill.
    straight to it instead of walking the flow again from the start: on the
    web, `navigate` to its path; on a device, the shortest path from the
    launch screen. Then `observe` and `locate`.
-5. Leave the session open through step 4's runs, on the screen under test.
-   When a failed run leaves you wanting a live look, `observe` there instead
-   of walking the flow again in a new session; `observe` does not reload, so
-   `navigate` to the path first when the run or a fix may have changed what
-   the page shows. Rules says when a run can go beside the session.
+5. Leave the session open through those runs, on the screen under test,
+   wherever Rules lets a run go beside it, so step 4's live look needs no
+   new session. `observe` does not reload: `navigate` even to the screen
+   the session is on when the run or a fix may have changed what it shows.
+   A live look's actions print test lines too: copy a fixed line from its
+   action, since `test_lines` also lists the looks after the first walk.
    `close_session` once the test passes; an idle session closes on its own
    after 30 minutes and never outlives 4 hours. When the client exits, every
    session closes and the app commands stop. To look at another project or
