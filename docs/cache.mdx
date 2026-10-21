@@ -126,8 +126,9 @@ identity. On devices, replay uses the
 ## Rerun a test while you fix it
 
 While you fix a failing test, keep the cache on in `read-write` mode, the
-local default, and outside [strict mode](#fail-on-a-stale-recording),
-which never writes. A failed run keeps the recordings a check
+local default (with `CI` set, an unset mode is `read-only`), and outside
+[strict mode](#fail-on-a-stale-recording), which never writes. A failed run
+keeps the recordings a check
 [confirmed](#when-a-recording-is-written) before the failure. The next run
 replays those goals without model calls, as long as each replay still
 matches the screen.
@@ -137,9 +138,9 @@ matches the screen.
 2. Don't rename the test or reword a goal that passes. Each
    [causes a miss](#what-must-match): a rename for every goal in the test,
    a reworded goal for itself.
-3. When the config sets `retries`, add `--retries 0`. A `retries` option on
-   the test or its `describe` wins over the flag. A retry doesn't replay,
-   so it runs every goal live.
+3. When retries are on (`retries` in the config, or `CI` set), add
+   `--retries 0`. A `retries` option on the test or its `describe` wins
+   over the flag. A retry doesn't replay, so it runs every goal live.
 4. When the test passes, run it one time with `--no-cache`. Every goal
    runs live, which shows the agent still reaches it without a recording.
 

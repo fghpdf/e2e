@@ -154,7 +154,9 @@ you changed:
   shows as handed off and `agent.assert`, `agent.waitFor`, and
   `agent.extract`. Leave `--no-cache` off: it sends every goal to the model
   again. Only a `read-write` cache records: the local default, but not with
-  `CI` set and no cache mode in the config, nor in strict mode.
+  `CI` set and no cache mode in the config, nor in strict mode. A stopped
+  run (Ctrl-C, a command your tool's timeout kills, `--max-duration`) saves
+  nothing, so give the command a timeout longer than the test.
 - Don't rename the test, its `describe`, or its file, and don't reword a
   goal, change its params, or change the agent's `context` or the test's
   `agentContext` once a goal passes. Each is part of a recording's key, so
