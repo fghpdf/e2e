@@ -105,10 +105,21 @@ Use: screen.getByRole("button", "Sign in")
 ## Run tests next to a session
 
 A session doesn't run tests and writes no test results or cache
-recordings. The agent runs tests with `e2e run`. On web, set
-[`reuseExisting: true`](/web#starting-your-app) to share the app a session
-started, or close the session first. On mobile, run on a device no session
-uses.
+recordings. The agent runs tests with `e2e run` and keeps the session open
+between runs. After a failed run, it looks at the screen in the session
+instead of walking the flow again.
+
+On web, a run next to a session depends on the target's `app`:
+
+| Target's `app` | A run while a session is open |
+| --- | --- |
+| No `command` | Both use the app you started. |
+| `url` on port [`0`](/web#let-the-runner-pick-the-port) | Each starts its own app on a free port. |
+| `command` with [`reuseExisting: true`](/web#starting-your-app) | The run uses the app the session started. Closing the session stops that app, also during a run. |
+| `command` on a fixed port | Fails with `APP_ALREADY_RUNNING`. Close the session first. |
+
+When `CI` is set, e2e ignores `reuseExisting`. Use port `0`, or close the
+session first. On mobile, run on a device no session uses.
 
 ## Run several agents
 
