@@ -61,7 +61,8 @@ default.
      `❯ at` URL or the screen's route, and tap only to reach a state no URL
      opens. A device session starts on the app's launch screen: take the
      shortest path from there.
-   - Then rerun the file (topic `mcp` says when a session must close
+   - Then rerun only that test by `file:line` (SKILL.md, "Rerunning a
+     test while you fix it"; topic `mcp` says when a session must close
      first).
 3. `.e2e/report.json` holds the same facts for scripts, not for reading:
    each step's `events` (`engine`, `poll`, `navigation`) and the attempt's
