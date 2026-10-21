@@ -126,9 +126,9 @@ identity. On devices, replay uses the
 ## Rerun a test while you fix it
 
 While you fix a failing test, keep the cache on in `read-write` mode, the
-local default (with `CI` set, an unset mode is `read-only`), and outside
-[strict mode](#fail-on-a-stale-recording), which never writes. A failed run
-keeps the recordings a check
+local default, and outside [strict mode](#fail-on-a-stale-recording),
+which never writes. With `CI` set, an unset mode is `read-only`. A failed
+run keeps the recordings a check
 [confirmed](#when-a-recording-is-written) before the failure. The next run
 replays those goals without model calls, as long as each replay still
 matches the screen.
