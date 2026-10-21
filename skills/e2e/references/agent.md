@@ -67,7 +67,9 @@ gates, and limits.
 - `context` is what the app calls things, sent to every model call, judges
   included; `system` is how the acting agent works, read only by the act
   loop. Both live on the agents entry; `agentContext` on a test or group
-  adds more.
+  adds more. Under `e2e run`, the context opens with the test's title path
+  (`Test: billing > upgrades the tier`), judges included, so name a test
+  for what it covers, not for the verdict it expects.
 
 ### Choose an agent
 
