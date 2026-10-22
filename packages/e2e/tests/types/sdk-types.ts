@@ -805,3 +805,9 @@ session.steps().push({} as StepRecord);
 session.tracePath = '/tmp/trace.md';
 // @ts-expect-error closing returns a read-only list of failures
 (await session.close()).push({} as SerializedError);
+
+// Browser fixture additions stay callable through the published web engine types.
+declare const webBrowser: import('@e2e-dev/web').Browser;
+void (webBrowser.mouse.dblclick(120, 80) satisfies Promise<void>);
+// @ts-expect-error both viewport coordinates are required
+void webBrowser.mouse.dblclick(120);
