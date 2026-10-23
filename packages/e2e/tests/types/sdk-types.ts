@@ -811,3 +811,6 @@ declare const webBrowser: import('@e2e-dev/web').Browser;
 void (webBrowser.mouse.dblclick(120, 80) satisfies Promise<void>);
 // @ts-expect-error both viewport coordinates are required
 void webBrowser.mouse.dblclick(120);
+void (screen.getByRole('tab').or(screen.getByText('Discover')) satisfies Locator);
+// @ts-expect-error an alternative must be a Locator
+void screen.getByRole('tab').or('tab');
