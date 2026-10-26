@@ -64,23 +64,14 @@ test.describe('raw pointer input', { requires: ['browser'] }, () => {
 
 test('raw mouse double-click edits a label beneath a sibling SVG', { requires: ['browser'] }, async ({ app, browser, screen }) => {
   await app.open('/pointer');
-  await browser.evaluate(() => {
-    document.body.innerHTML = `
-      <div style="position:relative;width:200px;height:80px"
-        ondblclick="const t=this.querySelector('textarea');t.readOnly=false;t.style.pointerEvents='auto';t.focus()">
-        <svg width="200" height="80" style="position:absolute;inset:0">
-          <path d="M1 1H199V79H1Z" fill="white" stroke="black" />
-        </svg>
-        <textarea aria-label="Edit label" readonly
-          style="position:absolute;inset:0;pointer-events:none;background:transparent">Node</textarea>
-      </div>`;
-    return null;
-  });
-  const point = await browser.evaluate(() => {
-    const box = document.querySelector('textarea')!.getBoundingClientRect();
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  });
+  const label = screen.getByRole('textbox', 'Edit label');
+  const point = centerOf(await boxOf(label));
+  const hit = await browser.evaluate(({ x, y }: { x: number; y: number }) => {
+    const target = document.elementFromPoint(x, y);
+    return { tag: target?.localName ?? null, node: target?.closest('#diagram-node')?.id ?? null };
+  }, { x: point.x, y: point.y });
+  expect(hit).toEqual({ tag: 'path', node: 'diagram-node' });
   await browser.mouse.dblclick(point.x, point.y);
-  await screen.getByRole('textbox', 'Edit label').fill('Renamed');
-  await expect(screen.getByRole('textbox', 'Edit label')).toHaveValue('Renamed');
+  await label.fill('Renamed');
+  await expect(label).toHaveValue('Renamed');
 });

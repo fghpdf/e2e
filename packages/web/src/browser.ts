@@ -659,12 +659,8 @@ export function createBrowserFixture(surface: PlaywrightSurface, context: Engine
         surface.guard(context.operation(), 'keyboard.type', () => surface.requirePage().keyboard.type(text), classifyInputError),
     },
     mouse: {
-      dblclick: (x, y) => {
-        if (!Number.isFinite(x) || !Number.isFinite(y)) {
-          throw new TestError('INVALID_ARGUMENT', 'browser.mouse.dblclick requires two finite coordinates');
-        }
-        return surface.guard(context.operation(), 'mouse.dblclick', () => surface.requirePage().mouse.dblclick(x, y), classifyInputError);
-      },
+      dblclick: (x, y) =>
+        surface.guard(context.operation(), 'mouse.dblclick', () => surface.requirePage().mouse.dblclick(x, y), classifyInputError),
       move: (x, y) =>
         surface.guard(context.operation(), 'mouse.move', () => surface.requirePage().mouse.move(x, y), classifyInputError),
       wheel: (deltaX, deltaY) =>

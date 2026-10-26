@@ -48,25 +48,4 @@ describe('mouse double-click input', () => {
       'mousedown|true|0|2|120,80;mouseup|true|0|2|120,80;click|true|0|2|120,80;dblclick|true|0|2|120,80;',
     );
   });
-
-  it('enters label editing through a sibling SVG that intercepts the textbox', async () => {
-    await surface.requirePage().setContent(`
-      <div style="position:fixed;left:20px;top:20px;width:200px;height:80px"
-        ondblclick="const t=this.querySelector('textarea');t.readOnly=false;t.style.pointerEvents='auto';t.focus()">
-        <svg width="200" height="80" style="position:absolute;inset:0">
-          <path d="M1 1H199V79H1Z" fill="white" stroke="black" />
-        </svg>
-        <textarea aria-label="Edit label" readonly
-          style="position:absolute;inset:0;pointer-events:none;background:transparent">Node</textarea>
-      </div>`);
-    await expect(surface.requirePage().getByRole('textbox', { name: 'Edit label' }).dblclick({ timeout: 200 }))
-      .rejects.toThrow(/intercepts pointer events/);
-    await browser.mouse.dblclick(120, 60);
-    await browser.keyboard.press('ControlOrMeta+A');
-    await browser.keyboard.type('Renamed');
-    expect(await browser.evaluate(() => {
-      const label = document.querySelector('textarea')!;
-      return { value: label.value, readonly: label.readOnly, focused: document.activeElement === label };
-    })).toEqual({ value: 'Renamed', readonly: false, focused: true });
-  });
 });

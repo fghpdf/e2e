@@ -888,14 +888,16 @@ await browser.keyboard.type('hello');
 #### `mouse`
 
 Viewport-level pointer input from test code, independent of agent
-observations. `dblclick(x, y)` sends a primary-button double-click at
-viewport CSS coordinates without element actionability checks. This can
-start inline editing when a diagram's SVG receives the input instead of
-the textbox listed in the semantic tree. Both coordinates must be finite
-numbers; otherwise it throws `INVALID_ARGUMENT`.
+observations.
+
+`dblclick(x, y)` sends a primary-button double-click at viewport CSS
+coordinates without element actionability checks.
 
 ```ts
 await browser.mouse.dblclick(120, 240);
+```
+
+```ts
 await browser.mouse.move(120, 240);
 await browser.mouse.down();
 await browser.mouse.move(320, 240);
